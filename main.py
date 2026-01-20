@@ -18,13 +18,20 @@ class SpeedTestApp(ctk.CTk):
         self.geometry("700x450")
         self.resizable(False, False)
 
+        # Criação das abas
+        self.tabview = ctk.CTkTabview(self, width=700, height=500)
+        self.tabview.pack(padx=20, pady=20)
+        
+        self.tab_teste = self.tabview.add("Teste")
+        self.tab_hist = self.tabview.add("Histórico")
+
         # --- Título ---
-        self.label_titulo = ctk.CTkLabel(self, text="SPEED TEST", font=("Roboto", 28, "bold"))
-        self.label_titulo.pack(pady=30)
+        self.label_titulo = ctk.CTkLabel(self.tab_teste, text="SPEED TEST", font=("Roboto", 28, "bold"))
+        self.label_titulo.pack(pady=20)
 
         # --- Container dos Cards ---
-        self.frame_cards = ctk.CTkFrame(self, fg_color="transparent")
-        self.frame_cards.pack(fill="x", padx=40)
+        self.frame_cards = ctk.CTkFrame(self.tab_teste, fg_color="transparent")
+        self.frame_cards.pack(fill="x", padx=20)
 
         # Card de Download
         self.card_down = self.criar_card("DOWNLOAD", "0.0", "#1f6aa5")
@@ -45,11 +52,15 @@ class SpeedTestApp(ctk.CTk):
         self.label_status = ctk.CTkLabel(self, text="Status: Pronto", font=("Roboto", 14))
         self.label_status.pack(pady=(40, 5))
 
-        self.btn_start = ctk.CTkButton(self, text="START TEST", command=self.iniciar_thread_teste, width=200, height=50, font=("Roboto", 16, "bold"))
-        self.btn_start.pack(pady=10)
+        self.btn_start = ctk.CTkButton(self.tab_teste, text="START TEST", command=self.iniciar_thread_teste, width=200, height=50, font=("Roboto", 16, "bold"))
+        self.btn_start.pack(pady=20)
 
-        self.btn_hist = ctk.CTkButton(self, text="VER HISTÓRICO", command=self.abrir_historico, width=200, height=35, fg_color="transparent", border_width=2, text_color="white")
-        self.btn_hist.pack(pady=5)
+        # Aba histórico
+        self.textbox_hist = ctk.CTkTextbox(self.tab_hist, width=650, height=400)
+        self.textbox_hist.pack(padx=10, pady=10)
+        
+        self.btn_atualizar = ctk.CTkButton(self.tab_hist, text="Atualizar Histórico", command=self.carregar_historico_na_aba)
+        self.btn_atualizar.pack(pady=10)
 
     def criar_card(self, titulo, valor_inicial, cor_destaque):
         # Frame do Card
@@ -99,6 +110,17 @@ class SpeedTestApp(ctk.CTk):
             os.startfile(arquivo)
         else:
             self.label_status.configure(text="Status: Histórico ainda não existe!")
+
+    def carregar_historico_na_aba(self):
+        arquivo = "historico.csv"
+        self.textbox_hist.delete("1.0", tk.END) # Limpa o texto atual
+        
+        if os.path.exists(arquivo):
+            with open(arquivo, mode="r", encoding="utf-8") as f:
+                conteudo = f.read()
+                self.textbox_hist.insert("1.0", conteudo)
+        else:
+            self.textbox_hist.insert("1.0", "Nenhum histórico encontrado.")
     
     def animar_valor(self, label, valor_final, atual=0.0):
         # Velocidade da subida: quanto menor o divisor, mais rápido sobe
@@ -146,6 +168,7 @@ class SpeedTestApp(ctk.CTk):
             ping = st.results.ping
             self.after(0, lambda: self.animar_valor(self.val_ping, ping))
             self.salvar_historico(down_speed, up_speed, ping)
+            self.carregar_historico_na_aba()
 
             self.label_status.configure(text="Status: Teste Finalizado!")
         except Exception as e:
