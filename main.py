@@ -2,6 +2,8 @@ import tkinter as tk
 import customtkinter as ctk
 import speedtest
 import threading
+import csv
+from datetime import datetime
 
 # Configurações visuais globais
 ctk.set_appearance_mode("dark")
@@ -68,6 +70,26 @@ class SpeedTestApp(ctk.CTk):
         
         return frame
     
+    def salvar_historico(self, down, up, ping):
+        # Pega a data e hora atual formatada
+        data_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        
+        # Nome do arquivo
+        arquivo = "historico.csv"
+        
+        # Verifica se o arquivo já existe para decidir se escreve o cabeçalho
+        import os
+        existe = os.path.exists(arquivo)
+        
+        with open(arquivo, mode="a", newline="", encoding="utf-8") as f:
+            escritor = csv.writer(f)
+            # Se o arquivo é novo, escreve os títulos das colunas
+            if not existe:
+                escritor.writerow(["Data/Hora", "Download (Mbps)", "Upload (Mbps)", "Ping (ms)"])
+            
+            # Escreve os dados do teste atual
+            escritor.writerow([data_atual, f"{down:.2f}", f"{up:.2f}", f"{ping:.0f}"])
+    
     def animar_valor(self, label, valor_final, atual=0.0):
         # Velocidade da subida: quanto menor o divisor, mais rápido sobe
         passo = valor_final / 30 
@@ -98,7 +120,7 @@ class SpeedTestApp(ctk.CTk):
             self.val_down.configure(text="0.0")
             self.val_up.configure(text="0.0")
             self.val_ping.configure(text="0")
-            
+
             st = speedtest.Speedtest()
             st.get_best_server()
             
@@ -112,6 +134,7 @@ class SpeedTestApp(ctk.CTk):
 
             ping = st.results.ping
             self.after(0, lambda: self.animar_valor(self.val_ping, ping))
+            self.salvar_historico(down_speed, up_speed, ping)
 
             self.label_status.configure(text="Status: Teste Finalizado!")
         except Exception as e:
