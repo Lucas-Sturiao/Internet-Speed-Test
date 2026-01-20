@@ -1,0 +1,104 @@
+import tkinter as tk
+import customtkinter as ctk
+import speedtest
+import threading
+
+# Configurações visuais globais
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
+
+class SpeedTestApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+
+        self.title("Internet Speed Test")
+        self.geometry("700x450")
+        self.resizable(False, False)
+
+        # --- Título ---
+        self.label_titulo = ctk.CTkLabel(self, text="SPEED TEST", font=("Roboto", 28, "bold"))
+        self.label_titulo.pack(pady=30)
+
+        # --- Container dos Cards ---
+        self.frame_cards = ctk.CTkFrame(self, fg_color="transparent")
+        self.frame_cards.pack(fill="x", padx=40)
+
+        # Card de Download
+        self.card_down = self.criar_card("DOWNLOAD", "0.0", "#1f6aa5")
+        self.card_down.grid(row=0, column=0, padx=10)
+
+        # Card de Upload
+        self.card_up = self.criar_card("UPLOAD", "0.0", "#2d8a4e")
+        self.card_up.grid(row=0, column=1, padx=10)
+
+        # Card de Latência (Ping)
+        self.card_ping = self.criar_card("PING", "0", "#8e44ad")
+        self.card_ping.grid(row=0, column=2, padx=10)
+
+        # Configurar colunas iguais
+        self.frame_cards.grid_columnconfigure((0, 1, 2), weight=1)
+
+        # --- Status e Botão ---
+        self.label_status = ctk.CTkLabel(self, text="Status: Pronto", font=("Roboto", 14))
+        self.label_status.pack(pady=(40, 5))
+
+        self.btn_start = ctk.CTkButton(self, text="START TEST", command=self.iniciar_thread_teste, 
+                                       width=200, height=50, font=("Roboto", 16, "bold"))
+        self.btn_start.pack(pady=10)
+
+    def criar_card(self, titulo, valor_inicial, cor_destaque):
+        # Frame do Card
+        frame = ctk.CTkFrame(self.frame_cards, width=180, height=180, corner_radius=20)
+        frame.pack_propagate(False) # Mantém o tamanho fixo
+        
+        lbl_titulo = ctk.CTkLabel(frame, text=titulo, font=("Roboto", 12, "bold"), text_color="gray")
+        lbl_titulo.pack(pady=(20, 10))
+
+        # O valor que será alterado
+        lbl_valor = ctk.CTkLabel(frame, text=valor_inicial, font=("Roboto", 32, "bold"), text_color=cor_destaque)
+        lbl_valor.pack(expand=True)
+
+        lbl_unidade = ctk.CTkLabel(frame, text="Mbps" if titulo != "PING" else "ms", font=("Roboto", 10))
+        lbl_unidade.pack(pady=(0, 20))
+
+        # Atribui o label a uma variável para podermos atualizar depois
+        if titulo == "DOWNLOAD": self.val_down = lbl_valor
+        elif titulo == "UPLOAD": self.val_up = lbl_valor
+        else: self.val_ping = lbl_valor
+        
+        return frame
+
+    def iniciar_thread_teste(self):
+        # Muda o estado do botão e status
+        self.btn_start.configure(state="disabled", text="TESTANDO...")
+        self.label_status.configure(text="Status: Conectando ao servidor...")
+        
+        # Cria e inicia a thread
+        thread = threading.Thread(target=self.executar_teste)
+        thread.start()
+
+    def executar_teste(self):
+        try:
+            st = speedtest.Speedtest()
+            st.get_best_server()
+            
+            self.label_status.configure(text="Status: Testando Download...")
+            down_speed = st.download() / 1_000_000
+            self.val_down.configure(text=f"{down_speed:.1f}")
+
+            self.label_status.configure(text="Status: Testando Upload...")
+            up_speed = st.upload() / 1_000_000
+            self.val_up.configure(text=f"{up_speed:.1f}")
+
+            ping = st.results.ping
+            self.val_ping.configure(text=f"{ping:.0f}")
+
+            self.label_status.configure(text="Status: Teste Finalizado!")
+        except Exception as e:
+            self.label_status.configure(text="Status: Erro de Conexão")
+        finally:
+            self.btn_start.configure(state="normal", text="START TEST")
+
+if __name__ == "__main__":
+    app = SpeedTestApp()
+    app.mainloop()
