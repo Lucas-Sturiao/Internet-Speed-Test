@@ -67,6 +67,21 @@ class SpeedTestApp(ctk.CTk):
         else: self.val_ping = lbl_valor
         
         return frame
+    
+    def animar_valor(self, label, valor_final, atual=0.0):
+        # Velocidade da subida: quanto menor o divisor, mais rápido sobe
+        passo = valor_final / 30 
+        
+        if atual < valor_final:
+            novo_valor = atual + passo
+            if novo_valor > valor_final: novo_valor = valor_final
+            
+            # Formatação visual: Mbps com 1 casa, Ping sem casas
+            texto = f"{novo_valor:.1f}" if valor_final > 10 else f"{novo_valor:.0f}"
+            label.configure(text=texto)
+            
+            # Chama a si mesma após 20ms para criar o efeito de movimento
+            self.after(20, lambda: self.animar_valor(label, valor_final, novo_valor))
 
     def iniciar_thread_teste(self):
         # Muda o estado do botão e status
@@ -79,22 +94,28 @@ class SpeedTestApp(ctk.CTk):
 
     def executar_teste(self):
         try:
+            # --- ZERAR VALORES ANTERIORES ---
+            self.val_down.configure(text="0.0")
+            self.val_up.configure(text="0.0")
+            self.val_ping.configure(text="0")
+            
             st = speedtest.Speedtest()
             st.get_best_server()
             
             self.label_status.configure(text="Status: Testando Download...")
             down_speed = st.download() / 1_000_000
-            self.val_down.configure(text=f"{down_speed:.1f}")
+            self.after(0, lambda: self.animar_valor(self.val_down, down_speed))
 
             self.label_status.configure(text="Status: Testando Upload...")
             up_speed = st.upload() / 1_000_000
-            self.val_up.configure(text=f"{up_speed:.1f}")
+            self.after(0, lambda: self.animar_valor(self.val_up, up_speed))
 
             ping = st.results.ping
-            self.val_ping.configure(text=f"{ping:.0f}")
+            self.after(0, lambda: self.animar_valor(self.val_ping, ping))
 
             self.label_status.configure(text="Status: Teste Finalizado!")
         except Exception as e:
+            print(f"Erro detalhado: {e}") 
             self.label_status.configure(text="Status: Erro de Conexão")
         finally:
             self.btn_start.configure(state="normal", text="START TEST")
