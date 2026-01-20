@@ -4,6 +4,7 @@ import speedtest
 import threading
 import csv
 from datetime import datetime
+import os
 
 # Configurações visuais globais
 ctk.set_appearance_mode("dark")
@@ -44,9 +45,11 @@ class SpeedTestApp(ctk.CTk):
         self.label_status = ctk.CTkLabel(self, text="Status: Pronto", font=("Roboto", 14))
         self.label_status.pack(pady=(40, 5))
 
-        self.btn_start = ctk.CTkButton(self, text="START TEST", command=self.iniciar_thread_teste, 
-                                       width=200, height=50, font=("Roboto", 16, "bold"))
+        self.btn_start = ctk.CTkButton(self, text="START TEST", command=self.iniciar_thread_teste, width=200, height=50, font=("Roboto", 16, "bold"))
         self.btn_start.pack(pady=10)
+
+        self.btn_hist = ctk.CTkButton(self, text="VER HISTÓRICO", command=self.abrir_historico, width=200, height=35, fg_color="transparent", border_width=2, text_color="white")
+        self.btn_hist.pack(pady=5)
 
     def criar_card(self, titulo, valor_inicial, cor_destaque):
         # Frame do Card
@@ -78,7 +81,6 @@ class SpeedTestApp(ctk.CTk):
         arquivo = "historico.csv"
         
         # Verifica se o arquivo já existe para decidir se escreve o cabeçalho
-        import os
         existe = os.path.exists(arquivo)
         
         with open(arquivo, mode="a", newline="", encoding="utf-8") as f:
@@ -89,6 +91,14 @@ class SpeedTestApp(ctk.CTk):
             
             # Escreve os dados do teste atual
             escritor.writerow([data_atual, f"{down:.2f}", f"{up:.2f}", f"{ping:.0f}"])
+    
+    def abrir_historico(self):
+        arquivo = "historico.csv"
+        if os.path.exists(arquivo):
+            # No Windows, isso abre o arquivo com o programa padrão
+            os.startfile(arquivo)
+        else:
+            self.label_status.configure(text="Status: Histórico ainda não existe!")
     
     def animar_valor(self, label, valor_final, atual=0.0):
         # Velocidade da subida: quanto menor o divisor, mais rápido sobe
@@ -121,7 +131,8 @@ class SpeedTestApp(ctk.CTk):
             self.val_up.configure(text="0.0")
             self.val_ping.configure(text="0")
 
-            st = speedtest.Speedtest()
+            st = speedtest.Speedtest(secure=True)
+            st.get_servers()
             st.get_best_server()
             
             self.label_status.configure(text="Status: Testando Download...")
