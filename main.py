@@ -16,11 +16,16 @@ class SpeedTestApp(ctk.CTk):
 
         self.title("Internet Speed Test")
         self.geometry("700x450")
-        self.resizable(False, False)
+        self.resizable(True, True)
+        self.minsize(width= 600, height=450)
+
+        # --- Status ---
+        self.label_status = ctk.CTkLabel(self, text="Status: Pronto", font=("Roboto", 14))
+        self.label_status.pack(pady=(10, 0))
 
         # Criação das abas
         self.tabview = ctk.CTkTabview(self, width=700, height=500)
-        self.tabview.pack(padx=20, pady=20)
+        self.tabview.pack(padx=20, pady=10, fill="both", expand=True)
         
         self.tab_teste = self.tabview.add("Teste")
         self.tab_hist = self.tabview.add("Histórico")
@@ -48,16 +53,13 @@ class SpeedTestApp(ctk.CTk):
         # Configurar colunas iguais
         self.frame_cards.grid_columnconfigure((0, 1, 2), weight=1)
 
-        # --- Status e Botão ---
-        self.label_status = ctk.CTkLabel(self, text="Status: Pronto", font=("Roboto", 14))
-        self.label_status.pack(pady=(40, 5))
-
+        # Botão start
         self.btn_start = ctk.CTkButton(self.tab_teste, text="START TEST", command=self.iniciar_thread_teste, width=200, height=50, font=("Roboto", 16, "bold"))
         self.btn_start.pack(pady=20)
 
         # Aba histórico
-        self.textbox_hist = ctk.CTkTextbox(self.tab_hist, width=650, height=400)
-        self.textbox_hist.pack(padx=10, pady=10)
+        self.textbox_hist = ctk.CTkTextbox(self.tab_hist, font=("Courier New", 12))
+        self.textbox_hist.pack(padx=10, pady=10, fill="both", expand=True)
         
         self.btn_atualizar = ctk.CTkButton(self.tab_hist, text="Atualizar Histórico", command=self.carregar_historico_na_aba)
         self.btn_atualizar.pack(pady=10)
