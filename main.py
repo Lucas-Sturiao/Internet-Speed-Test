@@ -58,7 +58,8 @@ class SpeedTestApp(ctk.CTk):
         self.btn_start.pack(pady=20)
 
         # Aba histórico
-        self.textbox_hist = ctk.CTkTextbox(self.tab_hist, font=("Courier New", 12))
+        self.textbox_hist = ctk.CTkTextbox(self.tab_hist, width=650, height=400, font=("Courier New", 13))
+        self.textbox_hist.configure(state="disabled")
         self.textbox_hist.pack(padx=10, pady=10, fill="both", expand=True)
         
         self.btn_atualizar = ctk.CTkButton(self.tab_hist, text="Atualizar Histórico", command=self.carregar_historico_na_aba)
@@ -115,14 +116,33 @@ class SpeedTestApp(ctk.CTk):
 
     def carregar_historico_na_aba(self):
         arquivo = "historico.csv"
-        self.textbox_hist.delete("1.0", tk.END) # Limpa o texto atual
+        
+        # Para editar uma textbox 'disabled', precisamos habilitar, mudar o texto e desabilitar de novo
+        self.textbox_hist.configure(state="normal")
+        self.textbox_hist.delete("1.0", tk.END)
         
         if os.path.exists(arquivo):
             with open(arquivo, mode="r", encoding="utf-8") as f:
-                conteudo = f.read()
-                self.textbox_hist.insert("1.0", conteudo)
+                leitor = csv.reader(f)
+                
+                # Criamos um cabeçalho com separadores
+                self.textbox_hist.insert(tk.END, f"{'DATA / HORA':<22} | {'DOWN':<10} | {'UP':<10} | {'PING':<6}\n")
+                self.textbox_hist.insert(tk.END, "-" * 60 + "\n")
+                
+                # Pula o cabeçalho original do arquivo CSV para não repetir
+                next(leitor, None) 
+                
+                for linha in leitor:
+                    if len(linha) == 4:
+                        data, down, up, ping = linha
+                        # Formata cada coluna com espaçamento fixo:
+                        texto_formatado = f"{data:<22} | {down:<10} | {up:<10} | {ping:<6}\n"
+                        self.textbox_hist.insert(tk.END, texto_formatado)
         else:
             self.textbox_hist.insert("1.0", "Nenhum histórico encontrado.")
+        
+        # Bloqueia novamente para o usuário não editar
+        self.textbox_hist.configure(state="disabled")
     
     def animar_valor(self, label, valor_final, atual=0.0):
         # Velocidade da subida: quanto menor o divisor, mais rápido sobe
